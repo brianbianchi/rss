@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RSS</title>
+    <link rel="icon" href="data:,">
+    <style>
+        * {
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <h1>What do you want to read?</h1>
+    <p>
+        Don't let an algorithm decide what you do or don't read. 
+        We'll send you an email with the latest posts from your favorite blogs.
+    </p>
+    {{if .Error}}
+    <div style="color: red;">{{.Error}}</div>
+    {{end}}
+    <form method="POST" action="/{{if .Code}}{{.Code}}{{end}}">
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" value="{{.Email}}" {{if .Email}}readonly{{end}} required>
+        </div>
+        <br>
+        <fieldset>
+            <legend>Choose what you want to read: </legend>
+
+            <input type="checkbox" onClick="toggle(this)" /> Select All<br /><br />
+            {{range $key, $value := .Subs}}
+            <div>
+                <input type="checkbox" id="{{$key.Link}}" name="links" value="{{$key.Link}}" {{if
+                    $value}}checked{{end}} />
+                <label for="{{$key.Link}}"><a href="{{$key.Blog}}">{{$key.Title}}</a></label>
+            </div>
+            {{end}}
+        </fieldset>
+
+        <button type="submit">Submit</button>
+    </form>
+    <script>
+        function toggle(source) {
+            checkboxes = document.getElementsByName('links');
+            for (var i = 0, n = checkboxes.length; i < n; i++) {
+                checkboxes[i].checked = source.checked;
+            }
+        }
+    </script>
+</body>
+</html>

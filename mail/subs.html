@@ -1,0 +1,21 @@
+<html>
+
+<body>
+    <h1>Links</h1>
+    {{ range .Rss }}
+    <hr>
+    <h2><a href="{{.Link}}">{{.Title}}</a></h2>
+    <p>{{.Description}}</p>
+
+    <ul>
+        {{range .Items}}
+        <li><a href="{{.Link}}">{{.Title}}</a></li>
+        {{ end }}
+    </ul>
+    {{ end }}
+    <hr>
+    <a href="{{.BaseUrl}}/{{.Code}}">Manage subscriptions</a>
+    <a href="{{.BaseUrl}}/unsubscribe/{{.Code}}">Unsubscribe</a>
+</body>
+
+</html>
