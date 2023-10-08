@@ -23,6 +23,21 @@ func main() {
 	db := data.InitDb()
 	defer db.Close()
 
+	http.HandleFunc("/success/", func(w http.ResponseWriter, r *http.Request) {
+		code := strings.TrimPrefix(r.URL.Path, "/success/")
+		if code == "" {
+			fmt.Fprintln(w, http.StatusNotFound)
+		}
+
+		path := util.GetRootPath()
+		t, err := template.ParseFiles(fmt.Sprint(path, "web/success.html"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		t.Execute(w, code)
+	})
+
 	http.HandleFunc("/unsubscribe/", func(w http.ResponseWriter, r *http.Request) {
 		code := strings.TrimPrefix(r.URL.Path, "/unsubscribe/")
 		data.DeleteSubs(db, code)
@@ -49,19 +64,20 @@ func main() {
 			if code == "" {
 				existingCode, _ := data.GetUserByEmail(db, email)
 				if existingCode != "" {
-					serveForm(w, db, code, "Your email is already registered.")
+					serveForm(w, db, "", "Your email is already registered.")
 					return
 				}
 				newUserCode, err := data.CreateUser(db, email)
 				if err != nil {
-					serveForm(w, db, code, "Failed to create a new user.")
+					serveForm(w, db, "", "Failed to create a new user.")
 					return
 				}
 				err = data.CreateSubs(db, links, newUserCode)
 				if err != nil {
-					serveForm(w, db, code, "Failed to create new subs.")
+					serveForm(w, db, "", "Failed to create new subs.")
 					return
 				}
+				http.Redirect(w, r, fmt.Sprint("/success/", newUserCode), http.StatusSeeOther)
 			}
 			if code != "" {
 				email, _ := data.GetUserByCode(db, code)
@@ -79,15 +95,8 @@ func main() {
 					serveForm(w, db, code, "Failed to create subs.")
 					return
 				}
+				http.Redirect(w, r, fmt.Sprint("/success/", code), http.StatusSeeOther)
 			}
-
-			path := util.GetRootPath()
-			t, err := template.ParseFiles(fmt.Sprint(path, "web/success.html"))
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			t.Execute(w, email)
 		}
 	})
 
