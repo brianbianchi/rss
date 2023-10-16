@@ -17,3 +17,6 @@ init:
 
 clean:
 	rm -rf bin
+
+test:
+	go test ./...

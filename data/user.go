@@ -41,7 +41,7 @@ func GetUserByEmail(db *sql.DB, email string) (string, error) {
 }
 
 func CreateUser(db *sql.DB, email string) (string, error) {
-	code := generateRandomID()
+	code := generateRandomID(10)
 	_, err := db.Exec(`INSERT INTO users (code, email, created) 
 		VALUES (?, ?, ?);`, code, email, time.Now())
 	if err != nil {
@@ -58,11 +58,10 @@ func DeleteUser(db *sql.DB, code string) error {
 	return nil
 }
 
-func generateRandomID() string {
+func generateRandomID(n int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	const idLength = 10
 
-	b := make([]byte, idLength)
+	b := make([]byte, n)
 	for i := range b {
 		b[i] = charset[rand.Intn(len(charset))]
 	}
