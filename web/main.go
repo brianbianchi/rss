@@ -13,44 +13,29 @@ import (
 )
 
 type PageData struct {
-	Code  string
-	Email string
-	Subs  map[data.Feed]bool
-	Error string
+	Code           string
+	Email          string
+	Subs           map[data.Feed]bool
+	SuccessCreated bool
+	SuccessUpdated bool
+	Error          string
 }
 
 func main() {
 	db := data.InitDb()
 	defer db.Close()
 
-	http.HandleFunc("/success/", func(w http.ResponseWriter, r *http.Request) {
-		code := strings.TrimPrefix(r.URL.Path, "/success/")
-		if code == "" {
-			fmt.Fprintln(w, http.StatusNotFound)
-		}
-
-		path := util.GetRootPath()
-		t, err := template.ParseFiles(fmt.Sprint(path, "web/success.html"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		t.Execute(w, code)
-	})
-
-	http.HandleFunc("/unsubscribe/", func(w http.ResponseWriter, r *http.Request) {
-		code := strings.TrimPrefix(r.URL.Path, "/unsubscribe/")
-		data.DeleteSubs(db, code)
-		data.DeleteUser(db, code)
-		fmt.Fprint(w, "unsubbed")
-	})
+	http.HandleFunc("/unsubscribe/", unsubscribeHandler(db))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		code := strings.TrimPrefix(r.URL.Path, "/")
+		urlCode := strings.TrimPrefix(r.URL.Path, "/")
+		pageData := PageData{Code: urlCode}
+
 		if r.Method == "GET" {
-			serveForm(w, db, code, "")
+			serveForm(w, db, pageData)
 			return
 		}
+
 		if r.Method == "POST" {
 			err := r.ParseForm()
 			if err != nil {
@@ -61,41 +46,50 @@ func main() {
 			email := r.FormValue("email")
 			links := r.Form["links"]
 
-			if code == "" {
+			if urlCode == "" {
 				existingCode, _ := data.GetUserByEmail(db, email)
 				if existingCode != "" {
-					serveForm(w, db, "", "Your email is already registered.")
+					pageData.Error = "Your email is already registered."
+					serveForm(w, db, pageData)
 					return
 				}
 				newUserCode, err := data.CreateUser(db, email)
 				if err != nil {
-					serveForm(w, db, "", "Failed to create a new user.")
+					pageData.Error = "Failed to create a new user."
+					serveForm(w, db, pageData)
 					return
 				}
 				err = data.CreateSubs(db, links, newUserCode)
 				if err != nil {
-					serveForm(w, db, "", "Failed to create new subs.")
+					pageData.Error = "Failed to create new subs."
+					serveForm(w, db, pageData)
 					return
 				}
-				http.Redirect(w, r, fmt.Sprint("/success/", newUserCode), http.StatusSeeOther)
+				pageData.Code = newUserCode
+				pageData.SuccessCreated = true
+				serveForm(w, db, pageData)
 			}
-			if code != "" {
-				email, _ := data.GetUserByCode(db, code)
+			if urlCode != "" {
+				email, _ := data.GetUserByCode(db, urlCode)
 				if email == "" {
-					serveForm(w, db, code, "Your link isn't correct.")
+					pageData.Error = "Your link isn't correct."
+					serveForm(w, db, pageData)
 					return
 				}
-				err = data.DeleteSubs(db, code)
+				err = data.DeleteSubs(db, urlCode)
 				if err != nil {
-					serveForm(w, db, code, "Failed to delete subs.")
+					pageData.Error = "Failed to delete subs."
+					serveForm(w, db, pageData)
 					return
 				}
-				err = data.CreateSubs(db, links, code)
+				err = data.CreateSubs(db, links, urlCode)
 				if err != nil {
-					serveForm(w, db, code, "Failed to create subs.")
+					pageData.Error = "Failed to create subs."
+					serveForm(w, db, pageData)
 					return
 				}
-				http.Redirect(w, r, fmt.Sprint("/success/", code), http.StatusSeeOther)
+				pageData.SuccessUpdated = true
+				serveForm(w, db, pageData)
 			}
 		}
 	})
@@ -105,14 +99,23 @@ func main() {
 	http.ListenAndServe(fmt.Sprint(":", port), nil)
 }
 
-func serveForm(w http.ResponseWriter, db *sql.DB, code string, errorDisplay string) {
+func unsubscribeHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		code := strings.TrimPrefix(r.URL.Path, "/unsubscribe/")
+		data.DeleteSubs(db, code)
+		data.DeleteUser(db, code)
+		fmt.Fprint(w, "We deleted your data. You are now unsubscribed. We regret seeing you leave.")
+	}
+}
+
+func serveForm(w http.ResponseWriter, db *sql.DB, pageData PageData) {
 	path := util.GetRootPath()
-	template, err := template.ParseFiles(fmt.Sprint(path, "web/form.html"))
+	template, err := template.ParseFiles(fmt.Sprint(path, "web/index.html"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	pageData, err := getPageData(db, code, errorDisplay)
+	pageData, err = getPageData(db, pageData)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -124,8 +127,7 @@ func serveForm(w http.ResponseWriter, db *sql.DB, code string, errorDisplay stri
 
 }
 
-func getPageData(db *sql.DB, code string, errorDisplay string) (PageData, error) {
-	pageData := PageData{}
+func getPageData(db *sql.DB, pageData PageData) (PageData, error) {
 	feeds, err := data.GetFeeds(db)
 	if err != nil {
 		return pageData, err
@@ -134,14 +136,13 @@ func getPageData(db *sql.DB, code string, errorDisplay string) (PageData, error)
 	for _, f := range feeds {
 		subs[f] = false
 	}
-	if code != "" {
-		pageData.Code = code
-		email, err := data.GetUserByCode(db, code)
+	if pageData.Code != "" {
+		email, err := data.GetUserByCode(db, pageData.Code)
 		if err != nil {
 			return pageData, err
 		}
 		pageData.Email = email
-		userSub, err := data.GetSubs(db, code)
+		userSub, err := data.GetSubs(db, pageData.Code)
 		if err != nil {
 			return pageData, err
 		}
@@ -154,6 +155,5 @@ func getPageData(db *sql.DB, code string, errorDisplay string) (PageData, error)
 		}
 	}
 	pageData.Subs = subs
-	pageData.Error = errorDisplay
 	return pageData, nil
 }
