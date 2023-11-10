@@ -62,7 +62,9 @@
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="{{$key.Link}}" name="links" value="{{$key.Link}}"
                     {{if $value}}checked{{end}} />
-                <label class="form-check-label" for="{{$key.Link}}"><a href="{{$key.Blog}}">{{$key.Title}}</a></label>
+                <label class="form-check-label" for="{{$key.Link}}">
+                    <a href="{{$key.Blog}}">{{$key.Title}}</a>
+                </label>
             </div>
             {{end}}
             </fieldset>
