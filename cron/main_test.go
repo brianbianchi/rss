@@ -35,4 +35,18 @@ func TestFilterItemsByDate(t *testing.T) {
 	if result != expected {
 		t.Fatalf(`filterItemsByDate() returned %d, expected %d.`, result, expected)
 	}
+
+	rss = &gofeed.Feed{
+		Items: []*gofeed.Item{
+			{},
+			{},
+			{},
+			{},
+		},
+	}
+	result = len(filterItemsByDate(rss).Items)
+	expected = 4
+	if result != expected {
+		t.Fatalf(`filterItemsByDate() returned %d, expected %d.`, result, expected)
+	}
 }

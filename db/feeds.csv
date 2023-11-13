@@ -1,10 +1,23 @@
 https://www.reddit.com/.rss,https://www.reddit.com/,Reddit front page
 https://www.reddit.com/r/programming/.rss,https://www.reddit.com/r/programming/,/r/Programming
 https://www.reddit.com/r/ProgrammerHumor/.rss,https://www.reddit.com/r/ProgrammerHumor/,/r/ProgrammerHumor
-https://levels.io/rss/,https://levels.io/,Levelsio
+https://levels.io/rss/,https://levels.io/,Levels io
 https://bakadesuyo.com/feed/,https://bakadesuyo.com/,Barking up the wrong tree
 https://waitbutwhy.com/feed,https://waitbutwhy.com/,Wait but why
 https://feeds.feedblitz.com/sethsblog&x=1,https://seths.blog/,Seth Godin
 https://news.ycombinator.com/rss,https://news.ycombinator.com/,Hacker news
 https://feeds.feedburner.com/MeltingAsphalt,https://meltingasphalt.com/,Melting asphalt
 https://openai.com/blog/rss/,https://openai.com/blog/,Open AI
+https://css-tricks.com/feed/,https://css-tricks.com/,CSS tricks
+https://dev.to/feed/,https://dev.to/,dev.to
+https://blog.logrocket.com/feed/,https://blog.logrocket.com/,Log rocket
+https://rachelbythebay.com/w/atom.xml,https://rachelbythebay.com/,rachelbythebay
+https://web.dev/feed.xml,https://web.dev/blog/,web.dev
+https://netflixtechblog.com/feed,https://netflixtechblog.com/,Netflix
+https://alistapart.com/main/feed/,https://alistapart.com/articles/,A list apart
+https://blog.codinghorror.com/rss/,https://blog.codinghorror.com/,Jeff Atwood
+https://fs.blog/blog/feed/,https://fs.blog/blog/,Farnam Street
+http://www.aaronsw.com/2002/feeds/pgessays.rss,http://www.paulgraham.com/articles.html,Paul Graham
+https://www.joelonsoftware.com/feed/,https://www.joelonsoftware.com/,Joel on software
+https://lethain.com/feeds.xml,https://lethain.com/,Irrational Exuberance
+https://staffeng.com/rss,https://staffeng.com/,Staff engineer
