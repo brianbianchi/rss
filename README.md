@@ -1,6 +1,7 @@
 > Don't let an algorithm decide what you do or don't read. Receive a daily, weekly, or monthly email containing the latest articles from your favorite blogs.
 
 ## Workflow
+```mermaid
 sequenceDiagram
     User->>Web: Provide email address and <br>reading preferences
     Web->>Database: Save user preferences
@@ -16,6 +17,7 @@ sequenceDiagram
     Web->>Database: Update subscriptions and/or user
     User->>Web: Unsubscribe
     Web->>Database: Delete user and associated subscriptions
+```
 
 ## Deploy
 [deploy.md](./deploy.md)
