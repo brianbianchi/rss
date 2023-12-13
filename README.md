@@ -1,9 +1,11 @@
+> Don't let an algorithm decide what you do or don't read. Receive a daily, weekly, or monthly email containing the latest articles from your favorite blogs.
+
 ## Workflow
 ```mermaid
 sequenceDiagram
-    User->>Web: I want to read <br> from these sources
+    User->>Web: Provide email address and <br>reading preferences
     Web->>Database: Save user preferences
-    loop
+    Cronjob every day/week/month
         Cronjob->>Database: Get user preferences
         Cronjob->>Blog(s): Get feeds
         Cronjob->>Cronjob: Create email
