@@ -6,8 +6,7 @@ build:
 serve:
 	go build -o bin/web web/*.go
 	./bin/web
-
-cj:
+cron:
 	go build -o bin/cron cron/main.go
 	./bin/cron
 
