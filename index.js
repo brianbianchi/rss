@@ -1,8 +1,7 @@
 const apiEndpoint = 'https://api.rss2json.com/v1/api.json?rss_url=';
-const localStorageKey = "bbfeedsubs";
+const localStorageKey = "rsssubs";
 const recommended = [
     { name: "A List Apart", blogUrl: "https://alistapart.com/", rssUrl: "https://alistapart.com/main/feed/" },
-    { name: "Paul Graham", blogUrl: "https://paulgraham.com/articles.html", rssUrl: "http://www.aaronsw.com/2002/feeds/pgessays.rss" },
     { name: "Bakadesuyo", blogUrl: "https://bakadesuyo.com/", rssUrl: "https://bakadesuyo.com/feed/" },
     { name: "Coding Horror", blogUrl: "https://blog.codinghorror.com/", rssUrl: "https://blog.codinghorror.com/rss/" },
     { name: "CSS-Tricks", blogUrl: "https://css-tricks.com/", rssUrl: "https://css-tricks.com/feed/" },
@@ -16,10 +15,8 @@ const recommended = [
     { name: "Melting Asphalt", blogUrl: "https://www.meltingasphalt.com/", rssUrl: "https://feeds.feedburner.com/MeltingAsphalt" },
     { name: "Netflix TechBlog", blogUrl: "https://netflixtechblog.com/", rssUrl: "https://netflixtechblog.com/feed" },
     { name: "OpenAI Blog", blogUrl: "https://openai.com/blog", rssUrl: "https://openai.com/blog/rss/" },
+    { name: "Paul Graham", blogUrl: "https://paulgraham.com/articles.html", rssUrl: "http://www.aaronsw.com/2002/feeds/pgessays.rss" },
     { name: "Rachel by the Bay", blogUrl: "https://rachelbythebay.com/w/", rssUrl: "https://rachelbythebay.com/w/atom.xml" },
-    { name: "Reddit (All)", blogUrl: "https://www.reddit.com/", rssUrl: "https://www.reddit.com/.rss" },
-    { name: "Reddit (Programming)", blogUrl: "https://www.reddit.com/r/programming/", rssUrl: "https://www.reddit.com/r/programming/.rss" },
-    { name: "Reddit (ProgrammerHumor)", blogUrl: "https://www.reddit.com/r/ProgrammerHumor/", rssUrl: "https://www.reddit.com/r/ProgrammerHumor/.rss" },
     { name: "Sam Altman's Blog", blogUrl: "https://blog.samaltman.com/", rssUrl: "https://blog.samaltman.com/posts.atom" },
     { name: "Seth's Blog", blogUrl: "https://seths.blog/", rssUrl: "https://feeds.feedblitz.com/sethsblog&x=1" },
     { name: "Staff Engineer", blogUrl: "https://staffeng.com/", rssUrl: "https://staffeng.com/rss" },
