@@ -1,4 +1,6 @@
-> Create a curated list of the latest articles from your favorite blogs.
+# RSS
+
+Create a curated list of the latest articles from your favorite blogs.
 
 
 ## Workflow
@@ -22,6 +24,3 @@ sequenceDiagram
         Web->>Web: Remove articles
     end
 ```
-
-## Contribute
-New RSS URL recommendations are welcome [here](https://github.com/brianbianchi/feed/blob/master/script.js).
