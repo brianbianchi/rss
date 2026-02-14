@@ -1,5 +1,6 @@
 > Create a curated list of the latest articles from your favorite blogs.
 
+
 ## Workflow
 ```mermaid
 sequenceDiagram

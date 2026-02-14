@@ -6,27 +6,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RSS Reader</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .hidden {
+            display: none;
+        }
+
+        nav button {
+            padding: 10px 15px;
+            margin-right: 10px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+        }
+
+        nav button.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+    </style>
 </head>
 
 <body>
-    <h2 onclick="toggleContent(this)">Subscriptions &#11021;</h2>
-    <span id="subscriptions">
-        <small id="noSubs">You have no subscriptions. Add a recommended RSS feed or enter a custom RSS URL.</small>
-        <ul id="subscriptionList"></ul>
-    </span>
+    <h1>RSS Reader</h1>
 
-    <h2 onclick="toggleContent(this)">Feeds &#11021;</h2>
-    <span id="feeds">
-        <div>
-            <input type="text" id="rssUrl" placeholder="Enter a custom RSS feed URL">
-            <button onclick="addCustomRssUrl()">Add</button>
-        </div>
-        <ul id="recommendedList"></ul>
-    </span>
+    <nav>
+        <button id="showArticlesBtn" class="active">Articles <span id="articleCount"></span></button>
+        <button id="showSubsBtn">Subscriptions <span id="subCount"></span></button>
+    </nav>
 
-    <div id="articles"></div>
+    <div id="articlesView">
+        <div id="articles"></div>
+    </div>
 
-    <script src="script.js"></script>
+    <div id="subscriptionsView" class="hidden">
+        <h2 onclick="toggleContent(this)">Subscriptions &#11021;</h2>
+        <span id="subscriptions">
+            <small id="noSubs">You have no subscriptions. Add a recommended RSS feed or enter a custom RSS URL.</small>
+            <ul id="subscriptionList"></ul>
+        </span>
+
+        <h2 onclick="toggleContent(this)">Feeds &#11021;</h2>
+        <span id="feeds">
+            <div>
+                <input type="text" id="rssUrl" placeholder="Enter a custom RSS feed URL">
+                <button onclick="addCustomRssUrl()">Add</button>
+            </div>
+            <ul id="recommendedList"></ul>
+        </span>
+    </div>
+
+    <script src="index.js"></script>
 </body>
 
 </html>

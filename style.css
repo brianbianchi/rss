@@ -3,8 +3,8 @@ body {
     margin: 20px;
 }
 
-#rssList {
-    margin-bottom: 20px;
+h2 {
+    cursor: pointer;
 }
 
 .rss-item {
@@ -17,8 +17,4 @@ body {
 
 .article {
     margin-top: 10px;
-}
-
-h2 {
-    cursor: pointer;
 }
