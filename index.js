@@ -1,6 +1,7 @@
-const apiEndpoint = 'https://api.rss2json.com/v1/api.json?rss_url=';
-const localStorageKey = "rsssubs";
-const recommended = [
+const API_ENDPOINT = 'https://api.rss2json.com/v1/api.json?rss_url=';
+const STORAGE_KEY = 'rsssubs';
+
+const RECOMMENDED = [
     { name: "A List Apart", blogUrl: "https://alistapart.com/", rssUrl: "https://alistapart.com/main/feed/" },
     { name: "Bakadesuyo", blogUrl: "https://bakadesuyo.com/", rssUrl: "https://bakadesuyo.com/feed/" },
     { name: "Coding Horror", blogUrl: "https://blog.codinghorror.com/", rssUrl: "https://blog.codinghorror.com/rss/" },
@@ -24,227 +25,249 @@ const recommended = [
     { name: "web.dev", blogUrl: "https://web.dev/", rssUrl: "https://web.dev/feed.xml" }
 ];
 
-let articles = [];
+// --- Storage helpers ---
 
-function isWithinLast7Days(date) {
-    const currentDate = new Date();
-    const sevenDaysAgo = new Date().setDate(currentDate.getDate() - 7);
-    const inputDate = new Date(date);
-    return inputDate >= sevenDaysAgo && inputDate <= currentDate;
+function getSubs() {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 }
 
-function createArticleItem(article) {
-    const articleItem = document.createElement('li');
-    articleItem.className = 'article';
-    articleItem.innerHTML = `
-        <a href="${article.link}" target="_blank" rel="noopener noreferrer">${article.title}</a>
-        <br />
-        <a href="${article.feedLink}" target="_blank" rel="noopener noreferrer">${article.feedTitle}</a>
-        <br />
-        ${article.author} ${new Date(article.date).toLocaleDateString("en-US")} <hr />
-    `;
-    return articleItem;
+function saveSubs(subs) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(subs));
 }
 
-async function fetchArticles(rssUrl) {
+// --- Articles ---
+
+function isWithinLast7Days(dateStr) {
+    return Date.now() - new Date(dateStr).getTime() <= 7 * 24 * 60 * 60 * 1000;
+}
+
+async function fetchFeedArticles(rssUrl) {
     try {
-        const response = await fetch(`${apiEndpoint}${rssUrl}`);
-        const data = await response.json();
-        if (response.status === 422) {
-            console.error(`Error fetching articles for ${rssUrl}:`, data.message);
-            return;
-        }
-        if (!data.feed || !data.items || data.items.length === 0) {
-            console.warn(`No feed data or items found for ${rssUrl}. Response:`, data);
-            return;
-        }
-        const feedUrl = data.feed.url;
-        const feedLink = data.feed.link;
-        const feedTitle = data.feed.title;
-        data.items.forEach(article => {
-            console.log(article.pubDate);
-
-            if (!isWithinLast7Days(article.pubDate)) return;
-            articles.push({
-                feedLink,
-                feedUrl,
-                feedTitle,
-                author: article.author,
-                date: new Date(article.pubDate),
-                link: article.link,
-                title: article.title
-            })
-        });
-    } catch (error) {
-        console.error(error);
+        const res = await fetch(`${API_ENDPOINT}${encodeURIComponent(rssUrl)}`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        if (!data.feed || !data.items?.length) return [];
+        return data.items
+            .filter(item => isWithinLast7Days(item.pubDate))
+            .map(item => ({
+                feedLink: data.feed.link,
+                feedTitle: data.feed.title,
+                author: item.author || '',
+                date: new Date(item.pubDate),
+                link: item.link,
+                title: item.title
+            }));
+    } catch {
+        return [];
     }
 }
 
-function displayArticles() {
-    const articlesDiv = document.getElementById('articles');
-    articlesDiv.innerHTML = '';
-    if (articles.length) {
-        articlesDiv.innerHTML += `<h2>Articles</h2>
-                                    <ul id="articleList"></ul>`;
-        articles.forEach(article => {
-            document.getElementById('articleList')
-                .appendChild(createArticleItem(article));
-        });
-    } else {
-        articlesDiv.innerHTML = `<p>No articles found. Add some subscriptions!</p>`;
+function createArticleEl(article) {
+    const li = document.createElement('li');
+    li.className = 'article';
+
+    const titleEl = document.createElement('p');
+    titleEl.className = 'article-title';
+    const titleLink = document.createElement('a');
+    titleLink.href = article.link;
+    titleLink.target = '_blank';
+    titleLink.rel = 'noopener noreferrer';
+    titleLink.textContent = article.title;
+    titleEl.appendChild(titleLink);
+
+    const metaEl = document.createElement('div');
+    metaEl.className = 'article-meta';
+
+    const feedLink = document.createElement('a');
+    feedLink.href = article.feedLink;
+    feedLink.target = '_blank';
+    feedLink.rel = 'noopener noreferrer';
+    feedLink.textContent = article.feedTitle;
+    metaEl.appendChild(feedLink);
+
+    const addSep = () => {
+        const sep = document.createElement('span');
+        sep.className = 'meta-sep';
+        sep.textContent = '·';
+        metaEl.appendChild(sep);
+    };
+
+    if (article.author) {
+        addSep();
+        const authorEl = document.createElement('span');
+        authorEl.textContent = article.author;
+        metaEl.appendChild(authorEl);
     }
-    document.getElementById('articleCount').textContent = `(${articles.length})`;
-}
 
-function createRssItem(feedData, isSubscribed) {
-    const rssItem = document.createElement('li');
-    rssItem.className = 'rss-item';
+    addSep();
+    const dateEl = document.createElement('span');
+    dateEl.textContent = article.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    metaEl.appendChild(dateEl);
 
-    let rssUrl = typeof feedData === 'string' ? feedData : feedData.rssUrl;
-    let displayName = typeof feedData === 'string' ? feedData : (feedData.name || feedData.rssUrl);
-    let displayLink = typeof feedData === 'string' ? null : (feedData.blogUrl || feedData.rssUrl);
-
-    let displayHtml = '';
-    if (displayLink && displayLink !== rssUrl) {
-        displayHtml = `<a href="${displayLink}" target="_blank" rel="noopener noreferrer">${displayName}</a>`;
-    } else {
-        displayHtml = `<span>${displayName}</span>`;
-    }
-
-    rssItem.innerHTML = `
-        ${displayHtml}
-        <br />
-        <small>${rssUrl}</small>
-        ${isSubscribed ?
-            `<button onclick="unsubscribe('${rssUrl}', this)">Unsubscribe</button>` :
-            `<button onclick="subscribe('${rssUrl}', this)">Subscribe</button>`}
-    `;
-    return rssItem;
-}
-
-function toggleSubWarning(subs) {
-    const warning = document.getElementById('noSubs');
-    warning.style.display = subs.length ? 'none' : 'block';
-}
-
-function toggleContent(header) {
-    const content = header.nextElementSibling;
-    content.style.display = content.style.display === 'block' ? 'none' : 'block';
-}
-
-async function addCustomRssUrl() {
-    const urlInput = document.getElementById('rssUrl');
-    const url = urlInput.value.trim();
-
-    if (url) {
-        let storedFeeds = JSON.parse(localStorage.getItem(localStorageKey)) || [];
-        if (!storedFeeds.some(feed => feed.rssUrl === url)) {
-            const newFeed = { name: "Custom Feed", blogUrl: url, rssUrl: url };
-            storedFeeds.push(newFeed);
-            localStorage.setItem(localStorageKey, JSON.stringify(storedFeeds));
-
-            document.getElementById('subscriptionList')
-                .appendChild(createRssItem(newFeed, true));
-            urlInput.value = '';
-
-            toggleSubWarning(storedFeeds);
-            updateSubscriptionCount();
-            await loadArticles();
-        } else {
-            alert('This RSS feed is already subscribed!');
-        }
-    }
-}
-
-async function subscribe(url, button) {
-    let storedFeeds = JSON.parse(localStorage.getItem(localStorageKey)) || [];
-    const subscribedFeed = recommended.find(feed => feed.rssUrl === url);
-
-    if (subscribedFeed && !storedFeeds.some(feed => feed.rssUrl === subscribedFeed.rssUrl)) {
-        storedFeeds.push(subscribedFeed);
-        localStorage.setItem(localStorageKey, JSON.stringify(storedFeeds));
-
-        document.getElementById('recommendedList')
-            .removeChild(button.parentElement);
-
-        document.getElementById('subscriptionList')
-            .appendChild(createRssItem(subscribedFeed, true));
-        toggleSubWarning(storedFeeds);
-        updateSubscriptionCount();
-        await loadArticles();
-    }
-}
-
-function unsubscribe(url, button) {
-    let storedFeeds = JSON.parse(localStorage.getItem(localStorageKey)) || [];
-    const newStoredFeeds = storedFeeds.filter(feed => feed.rssUrl !== url);
-    localStorage.setItem(localStorageKey, JSON.stringify(newStoredFeeds));
-
-    document.getElementById('subscriptionList').removeChild(button.parentElement);
-    toggleSubWarning(newStoredFeeds);
-    updateSubscriptionCount();
-    loadArticles();
-    loadSubscriptions();
-}
-
-function showSection(sectionId) {
-    document.getElementById('articlesView').classList.add('hidden');
-    document.getElementById('subscriptionsView').classList.add('hidden');
-
-    document.getElementById('showArticlesBtn').classList.remove('active');
-    document.getElementById('showSubsBtn').classList.remove('active');
-
-    document.getElementById(sectionId).classList.remove('hidden');
-    if (sectionId === 'articlesView') {
-        document.getElementById('showArticlesBtn').classList.add('active');
-        loadArticles();
-    } else {
-        document.getElementById('showSubsBtn').classList.add('active');
-        loadSubscriptions();
-    }
+    li.appendChild(titleEl);
+    li.appendChild(metaEl);
+    return li;
 }
 
 async function loadArticles() {
-    articles = [];
-    const storedFeeds = JSON.parse(localStorage.getItem(localStorageKey)) || [];
-    for (const feed of storedFeeds) {
-        await fetchArticles(feed.rssUrl);
+    const list = document.getElementById('articleList');
+    const countEl = document.getElementById('articleCount');
+    list.innerHTML = '';
+
+    const subs = getSubs();
+    if (!subs.length) {
+        const msg = document.createElement('li');
+        msg.className = 'status-msg';
+        msg.textContent = 'No feeds subscribed. Go to Feeds to add some.';
+        list.appendChild(msg);
+        countEl.textContent = '';
+        return;
     }
-    articles.sort((a, b) => new Date(a.date) - new Date(b.date));
-    displayArticles();
+
+    const loadingMsg = document.createElement('li');
+    loadingMsg.className = 'status-msg';
+    loadingMsg.textContent = 'Loading…';
+    list.appendChild(loadingMsg);
+
+    const results = await Promise.all(subs.map(feed => fetchFeedArticles(feed.rssUrl)));
+    const articles = results.flat().sort((a, b) => b.date - a.date);
+
+    list.innerHTML = '';
+
+    if (!articles.length) {
+        const msg = document.createElement('li');
+        msg.className = 'status-msg';
+        msg.textContent = 'No articles from the last 7 days.';
+        list.appendChild(msg);
+        countEl.textContent = '';
+        return;
+    }
+
+    articles.forEach(a => list.appendChild(createArticleEl(a)));
+    countEl.textContent = `(${articles.length})`;
+}
+
+// --- Subscriptions ---
+
+function createFeedEl(feed, isSubscribed) {
+    const li = document.createElement('li');
+    li.className = 'feed-item';
+
+    const info = document.createElement('div');
+    info.className = 'feed-info';
+
+    const nameEl = document.createElement('a');
+    nameEl.className = 'feed-name';
+    nameEl.href = feed.blogUrl || feed.rssUrl;
+    nameEl.target = '_blank';
+    nameEl.rel = 'noopener noreferrer';
+    nameEl.textContent = feed.name || feed.rssUrl;
+
+    const urlEl = document.createElement('span');
+    urlEl.className = 'feed-url';
+    urlEl.textContent = feed.rssUrl;
+
+    info.appendChild(nameEl);
+    info.appendChild(urlEl);
+
+    const btn = document.createElement('button');
+    btn.className = `btn-feed ${isSubscribed ? 'remove' : 'add'}`;
+    btn.textContent = isSubscribed ? 'Remove' : 'Add';
+    btn.dataset.rssUrl = feed.rssUrl;
+    btn.dataset.action = isSubscribed ? 'unsubscribe' : 'subscribe';
+
+    li.appendChild(info);
+    li.appendChild(btn);
+    return li;
 }
 
 function loadSubscriptions() {
-    const subscriptionList = document.getElementById('subscriptionList');
-    subscriptionList.innerHTML = '';
-    const recommendedList = document.getElementById('recommendedList');
-    recommendedList.innerHTML = '';
+    const subs = getSubs();
+    const subList = document.getElementById('subscriptionList');
+    const recList = document.getElementById('recommendedList');
 
-    let storedFeeds = JSON.parse(localStorage.getItem(localStorageKey)) || [];
-    storedFeeds.forEach(feed => {
-        subscriptionList.appendChild(createRssItem(feed, true));
-    });
+    subList.innerHTML = '';
+    recList.innerHTML = '';
 
-    const storedRssUrls = storedFeeds.map(feed => feed.rssUrl);
+    const subUrls = new Set(subs.map(f => f.rssUrl));
 
-    recommended.forEach(recFeed => {
-        if (!storedRssUrls.includes(recFeed.rssUrl)) {
-            recommendedList.appendChild(createRssItem(recFeed, false));
+    document.getElementById('noSubs').classList.toggle('hidden', subs.length > 0);
+    subs.forEach(feed => subList.appendChild(createFeedEl(feed, true)));
+
+    RECOMMENDED.filter(f => !subUrls.has(f.rssUrl))
+        .forEach(feed => recList.appendChild(createFeedEl(feed, false)));
+
+    const countEl = document.getElementById('subCount');
+    countEl.textContent = subs.length ? `(${subs.length})` : '';
+}
+
+function handleFeedAction(e) {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+
+    const { action, rssUrl } = btn.dataset;
+    let subs = getSubs();
+
+    if (action === 'subscribe') {
+        const feed = RECOMMENDED.find(f => f.rssUrl === rssUrl);
+        if (feed && !subs.some(f => f.rssUrl === rssUrl)) {
+            saveSubs([...subs, feed]);
         }
-    });
-    toggleSubWarning(storedFeeds);
-    updateSubscriptionCount();
+    } else if (action === 'unsubscribe') {
+        saveSubs(subs.filter(f => f.rssUrl !== rssUrl));
+    }
+
+    loadSubscriptions();
 }
 
-function updateSubscriptionCount() {
-    const subs = JSON.parse(localStorage.getItem(localStorageKey)) || [];
-    document.getElementById('subCount').textContent = `(${subs.length})`;
+function addCustomFeed() {
+    const input = document.getElementById('rssUrl');
+    const errorEl = document.getElementById('addFeedError');
+    const url = input.value.trim();
+
+    errorEl.textContent = '';
+    errorEl.classList.add('hidden');
+
+    if (!url) return;
+
+    const subs = getSubs();
+    if (subs.some(f => f.rssUrl === url)) {
+        errorEl.textContent = 'Already subscribed to this feed.';
+        errorEl.classList.remove('hidden');
+        return;
+    }
+
+    saveSubs([...subs, { name: url, blogUrl: url, rssUrl: url }]);
+    input.value = '';
+    loadSubscriptions();
 }
 
-document.getElementById('showArticlesBtn').addEventListener('click', () => showSection('articlesView'));
-document.getElementById('showSubsBtn').addEventListener('click', () => showSection('subscriptionsView'));
+// --- Navigation ---
+
+function showSection(section) {
+    const isArticles = section === 'articles';
+    document.getElementById('articlesView').classList.toggle('hidden', !isArticles);
+    document.getElementById('subscriptionsView').classList.toggle('hidden', isArticles);
+    document.getElementById('showArticlesBtn').classList.toggle('active', isArticles);
+    document.getElementById('showSubsBtn').classList.toggle('active', !isArticles);
+
+    if (isArticles) loadArticles();
+    else loadSubscriptions();
+}
+
+// --- Event listeners ---
+
+document.getElementById('showArticlesBtn').addEventListener('click', () => showSection('articles'));
+document.getElementById('showSubsBtn').addEventListener('click', () => showSection('subscriptions'));
+document.getElementById('addFeedBtn').addEventListener('click', addCustomFeed);
+document.getElementById('rssUrl').addEventListener('keydown', e => { if (e.key === 'Enter') addCustomFeed(); });
+document.getElementById('rssUrl').addEventListener('input', () => {
+    document.getElementById('addFeedError').classList.add('hidden');
+});
+document.getElementById('subscriptionList').addEventListener('click', handleFeedAction);
+document.getElementById('recommendedList').addEventListener('click', handleFeedAction);
 
 document.addEventListener('DOMContentLoaded', () => {
-    showSection('articlesView');
     loadSubscriptions();
+    loadArticles();
 });
